@@ -4,35 +4,56 @@ import Primes
 import qualified System.Random as R
 import Options.Applicative
 
-data Options = Options
-    { name :: String,
-      seed :: Int,
-      number :: Int }
 
-optionsParser :: Parser Options
-optionsParser = Options
-    <$> strOption
-        (  long "Name"
-        <> metavar "NAME"
-        <> help "Your name")
-    <*> option auto
+data Command
+    = PrimeCmd PrimeOptions
+    | StringCmd StringOptions
+
+
+data PrimeOptions = PrimeOptions
+    { seed :: Int,
+      kbits :: Int }
+
+primeCmdParser :: Parser Command
+primeCmdParser = PrimeCmd <$> (PrimeOptions
+    <$> option auto
         (  long "seed"
-        <> help "rng seed value"
+        <> metavar "INT"
+        <> value 0
         <> showDefault
-        <> value 1
-        <> metavar "INT" )
+        <> help "rng seed value" )
     <*> option auto
-        (  long "num"
-        <> help "number to check"
+        (  long "kbits"
+        <> metavar "INT"
+        <> help "how many bits should prime number have"))
+
+data StringOptions = StringOptions
+    { sseed :: Int,
+      alphabet :: String }
+
+
+stringCmdParser :: Parser Command
+stringCmdParser = StringCmd <$> (StringOptions
+    <$> option auto
+        (  long "seed"
+        <> short 's'
+        <> value 0
         <> showDefault
-        <> value 1
-        <> metavar "INT" )
+        <> help "rng seed value")
+    <*> strArgument
+        (  metavar "STRING"
+        <> help "Alphabet"))
+
+commandParser :: Parser Command
+commandParser = hsubparser
+    (  command "prime" (info primeCmdParser (progDesc "generate random prime number"))
+    <> command "string" (info stringCmdParser (progDesc "generate random string"))
+    )
+
 
 main :: IO ()
 main = do
-    opts <- execParser optsParser
-    putStrLn $ "Hello, " ++ name opts ++ "!, seed is " ++ show (seed opts)
-    let g = R.mkStdGen (seed opts)
-    putStrLn $ "Number " ++ show (number opts) ++ " is " ++ show (millerRabin g 10 (number opts))
-    where
-        optsParser = info (optionsParser <**> helper) ( fullDesc <> progDesc "A simple CLI to greet the user" <> header "greet-cli - A basic Haskell CLI example")
+    cmd <- execParser (info commandParser fullDesc)
+    case cmd of 
+        PrimeCmd opts -> putStrLn "prime generator :)"
+        StringCmd opts -> putStrLn "string generator"
