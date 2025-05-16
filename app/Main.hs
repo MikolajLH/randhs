@@ -3,6 +3,7 @@ module Main where
 import Primes
 import qualified System.Random as R
 import Options.Applicative
+import Numeric (showHex)
 
 
 data Command
@@ -12,6 +13,7 @@ data Command
 
 data PrimeOptions = PrimeOptions
     { seed :: Int,
+      hex :: Bool,
       kbits :: Int }
 
 primeCmdParser :: Parser Command
@@ -22,6 +24,10 @@ primeCmdParser = PrimeCmd <$> (PrimeOptions
         <> value 0
         <> showDefault
         <> help "rng seed value" )
+    <*> switch
+        (  long "hex"
+        <> short 'h'
+        <> help "output in hex format" )
     <*> option auto
         (  long "kbits"
         <> metavar "INT"
@@ -55,5 +61,10 @@ main :: IO ()
 main = do
     cmd <- execParser (info commandParser fullDesc)
     case cmd of 
-        PrimeCmd opts -> let g = R.mkStdGen (seed opts) in putStrLn $ "prime generator: " ++ show (randomkbitsPrime g (kbits opts))
+        PrimeCmd opts -> 
+            let g = R.mkStdGen (seed opts) in 
+                putStrLn $ "prime generator: " ++ (let p = randomkbitsPrime g (kbits opts) in
+                    if hex opts then 
+                        show $ fmap (`showHex` "") p
+                    else show p)
         StringCmd opts -> putStrLn "string generator"
