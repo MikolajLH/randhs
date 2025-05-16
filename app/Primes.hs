@@ -1,5 +1,6 @@
 module Primes where
 
+import GHC.Num (integerLog2)
 import qualified System.Random as R
 import qualified Data.Maybe
 
@@ -30,3 +31,21 @@ millerRabin g s p = all (\(_, z) -> z == 1 || z == p - 1 || cond (1 :: Integer) 
       | otherwise =
           let z' = (z * z) `mod` p
            in (z' /= 1) && cond (j + 1) z'
+
+
+randomkbitsPrime :: (Integral n, R.Random n, R.RandomGen g) => g -> n -> Maybe Integer
+randomkbitsPrime g k =
+  case dropWhile (not . millerRabin g 20 . snd) (zip [(1 :: Integer) .. n_of_samples] ns) of
+    [] -> Nothing
+    ((_, p) : _) -> Just p
+  where
+    ln n = let ln2 = 0.69314718056 :: Double in (+ 1) $ floor $ fromIntegral (integerLog2 n) * ln2
+    (a, b) = (2 ^ (k - 1), 2 ^ k)
+    n_of_samples =
+      let toa = a `div` ln a
+          tob = b `div` ln b
+          n_of_primes = tob - toa
+          is_prime_proba = fromIntegral n_of_primes / fromIntegral (b - a)
+          err = 0.00001 :: Double
+       in (+ 1) $ floor $ logBase (1 - is_prime_proba) err
+    ns = R.randomRs (a, b) g :: [Integer]
