@@ -55,5 +55,5 @@ main :: IO ()
 main = do
     cmd <- execParser (info commandParser fullDesc)
     case cmd of 
-        PrimeCmd opts -> putStrLn "prime generator :)"
+        PrimeCmd opts -> let g = R.mkStdGen (seed opts) in putStrLn $ "prime generator: " ++ show (randomkbitsPrime g (kbits opts))
         StringCmd opts -> putStrLn "string generator"
