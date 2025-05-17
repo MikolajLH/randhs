@@ -62,6 +62,9 @@ randomListSample g [] = error "Empty List"
 randomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
 
 
+randomString :: (R.RandomGen g) => g -> [a] -> Int -> [a]
+randomString g [] _ = error "Empty alphabet"
+randomString g xs count = let ps = take count $ tail $ iterate (\(e, g') -> randomListSample g' xs) (head xs, g) in fst <$> ps
 
 main :: IO ()
 main = do
