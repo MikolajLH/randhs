@@ -59,7 +59,9 @@ commandParser = hsubparser
 
 randomListSample :: (a, R.RandomGen g) => g -> [a] -> (a, g)
 randomListSample g [] = error "Empty List"
-radnomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
+randomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
+
+
 
 main :: IO ()
 main = do
