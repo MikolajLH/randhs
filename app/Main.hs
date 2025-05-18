@@ -5,6 +5,13 @@ import qualified System.Random as R
 import Options.Applicative
 import Numeric (showHex)
 import Data.Maybe
+import System.Entropy (getEntropy)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
+import Data.ByteString.Char8 (unpack)
+import Data.Word (Word8)
+import Data.Bits (shiftL, (.|.))
+
 
 
 data GlobalOptions = GlobalOptions
@@ -37,10 +44,14 @@ globalOptionsParser :: Parser GlobalOptions
 globalOptionsParser = GlobalOptions
     <$> option auto
         (  long "seed"
-        <> short 's' )
+        <> short 's'
+        <> value (-1)
+        )
     <*> option auto
         (  long "count"
-        <> short 'c' )
+        <> short 'c' 
+        <> value 1
+        )
 
 
 primeCmdParser :: Parser Command
@@ -76,6 +87,10 @@ optionsParser = Options
     <*> commandParser
 
 
+byteStringToInt :: ByteString -> Int
+byteStringToInt bs = foldl (\acc w -> acc `shiftL` 8 .|. fromIntegral w) 0 (BS.unpack bs)
+
+
 randomListSample :: R.RandomGen g => g -> [a] -> (a, g)
 randomListSample g [] = error "Empty List"
 randomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
@@ -90,7 +105,8 @@ main = do
     opts <- execParser (info optionsParser fullDesc)
     let seed' = seed $ globalOpts opts
     let count' = count $ globalOpts opts
-    let g = R.mkStdGen seed'
+    entropy <- getEntropy 4
+    let g = R.mkStdGen $ if seed' < 0 then byteStringToInt entropy else seed'
     case cmd opts of 
         PrimeCmd opts -> 
             let kbits' = kbits opts
