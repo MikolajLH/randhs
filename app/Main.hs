@@ -4,7 +4,7 @@ import Primes
 import qualified System.Random as R
 import Options.Applicative
 import Numeric (showHex)
-
+import Data.Maybe
 
 
 data GlobalOptions = GlobalOptions
@@ -95,8 +95,12 @@ main = do
         PrimeCmd opts -> 
             let kbits' = kbits opts
                 hex' = hex opts
-            in putStrLn "kbits " -- ++ show kbits' ++ "hex: " show hex
+                p = randomkbitsPrime g kbits'
+                ps = if hex' then fmap (`showHex` "") p else show <$> p
+                prime = fromMaybe "" ps
+            in putStrLn prime
         StringCmd opts ->
             let alphabet' = alphabet opts
                 wordLength' = wordLength opts
-            in putStrLn "alphabet: " -- ++ show alphabet' ++ "wordLenght: " ++ show wordLength'
+                word = randomString g alphabet' wordLength'
+            in putStrLn word
