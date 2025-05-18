@@ -35,7 +35,8 @@ primeCmdParser = PrimeCmd <$> (PrimeOptions
 
 data StringOptions = StringOptions
     { sseed :: Int,
-      alphabet :: String }
+      alphabet :: String,
+      wordLength :: Int }
 
 
 stringCmdParser :: Parser Command
@@ -48,7 +49,11 @@ stringCmdParser = StringCmd <$> (StringOptions
         <> help "rng seed value")
     <*> strArgument
         (  metavar "STRING"
-        <> help "Alphabet"))
+        <> help "Alphabet")
+    <*> option auto
+        (  long "length"
+        <> short 'n'
+        <> help "word length"))
 
 commandParser :: Parser Command
 commandParser = hsubparser
@@ -76,4 +81,6 @@ main = do
                     if hex opts then 
                         show $ fmap (`showHex` "") p
                     else show p)
-        StringCmd opts -> putStrLn "string generator"
+        StringCmd opts -> 
+            let g = R.mkStdGen (sseed opts); in
+                putStrLn $ "string: " ++ randomString g (alphabet opts) (wordLength opts)
