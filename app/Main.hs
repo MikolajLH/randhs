@@ -6,60 +6,74 @@ import Options.Applicative
 import Numeric (showHex)
 
 
+
+data GlobalOptions = GlobalOptions
+    { seed :: Int
+    , count :: Int
+    }
+
+
 data Command
     = PrimeCmd PrimeOptions
     | StringCmd StringOptions
 
 
 data PrimeOptions = PrimeOptions
-    { seed :: Int,
-      hex :: Bool,
-      kbits :: Int }
+    { kbits :: Int
+    , hex :: Bool
+    }
+
+data StringOptions = StringOptions
+    { alphabet :: String
+    , wordLength :: Int
+    }
+
+data Options = Options
+    { globalOpts :: GlobalOptions
+    , cmd :: Command
+    }
+
+globalOptionsParser :: Parser GlobalOptions
+globalOptionsParser = GlobalOptions
+    <$> option auto
+        (  long "seed"
+        <> short 's' )
+    <*> option auto
+        (  long "count"
+        <> short 'c' )
+
 
 primeCmdParser :: Parser Command
 primeCmdParser = PrimeCmd <$> (PrimeOptions
     <$> option auto
-        (  long "seed"
-        <> metavar "INT"
-        <> value 0
-        <> showDefault
-        <> help "rng seed value" )
+        (  long "kbits"
+        <> short 'k' )
     <*> switch
         (  long "hex"
-        <> short 'h'
-        <> help "output in hex format" )
-    <*> option auto
-        (  long "kbits"
-        <> metavar "INT"
-        <> help "how many bits should prime number have"))
-
-data StringOptions = StringOptions
-    { sseed :: Int,
-      alphabet :: String,
-      wordLength :: Int }
+        <> short 'h' ))
 
 
 stringCmdParser :: Parser Command
 stringCmdParser = StringCmd <$> (StringOptions
-    <$> option auto
-        (  long "seed"
-        <> short 's'
-        <> value 0
-        <> showDefault
-        <> help "rng seed value")
-    <*> strArgument
+    <$> strArgument
         (  metavar "STRING"
         <> help "Alphabet")
     <*> option auto
         (  long "length"
-        <> short 'n'
-        <> help "word length"))
+        <> short 'n' ))
+
 
 commandParser :: Parser Command
 commandParser = hsubparser
-    (  command "prime" (info primeCmdParser (progDesc "generate random prime number"))
+    (  command "prime"  (info primeCmdParser  (progDesc "generate random prime number"))
     <> command "string" (info stringCmdParser (progDesc "generate random string"))
     )
+
+
+optionsParser :: Parser Options
+optionsParser = Options
+    <$> globalOptionsParser
+    <*> commandParser
 
 
 randomListSample :: R.RandomGen g => g -> [a] -> (a, g)
@@ -73,14 +87,16 @@ randomString g xs count = let ps = take count $ tail $ iterate (\(e, g') -> rand
 
 main :: IO ()
 main = do
-    cmd <- execParser (info commandParser fullDesc)
-    case cmd of 
+    opts <- execParser (info optionsParser fullDesc)
+    let seed' = seed $ globalOpts opts
+    let count' = count $ globalOpts opts
+    let g = R.mkStdGen seed'
+    case cmd opts of 
         PrimeCmd opts -> 
-            let g = R.mkStdGen (seed opts) in 
-                putStrLn $ "prime generator: " ++ (let p = randomkbitsPrime g (kbits opts) in
-                    if hex opts then 
-                        show $ fmap (`showHex` "") p
-                    else show p)
-        StringCmd opts -> 
-            let g = R.mkStdGen (sseed opts); in
-                putStrLn $ "string: " ++ randomString g (alphabet opts) (wordLength opts)
+            let kbits' = kbits opts
+                hex' = hex opts
+            in putStrLn "kbits " -- ++ show kbits' ++ "hex: " show hex
+        StringCmd opts ->
+            let alphabet' = alphabet opts
+                wordLength' = wordLength opts
+            in putStrLn "alphabet: " -- ++ show alphabet' ++ "wordLenght: " ++ show wordLength'
