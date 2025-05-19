@@ -96,9 +96,11 @@ randomListSample g [] = error "Empty List"
 randomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
 
 
-randomString :: (R.RandomGen g) => g -> [a] -> Int -> [a]
+randomString :: (R.RandomGen g) => g -> [a] -> Int -> ([a], g)
 randomString g [] _ = error "Empty alphabet"
-randomString g xs count = let ps = take count $ tail $ iterate (\(e, g') -> randomListSample g' xs) (head xs, g) in fst <$> ps
+randomString g xs count = 
+    let ps = take count $ tail $ iterate (\(e, g') -> randomListSample g' xs) (head xs, g) 
+    in foldr (\(e, g') (word, _) -> (e:word, g') ) ([], g) ps
 
 main :: IO ()
 main = do
@@ -118,5 +120,5 @@ main = do
         StringCmd opts ->
             let alphabet' = alphabet opts
                 wordLength' = wordLength opts
-                word = randomString g alphabet' wordLength'
+                (word, g') = randomString g alphabet' wordLength'
             in putStrLn word
