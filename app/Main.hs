@@ -100,7 +100,8 @@ randomString :: (R.RandomGen g) => g -> [a] -> Int -> ([a], g)
 randomString g [] _ = error "Empty alphabet"
 randomString g xs count = 
     let ps = take count $ tail $ iterate (\(e, g') -> randomListSample g' xs) (head xs, g) 
-    in foldr (\(e, g') (word, _) -> (e:word, g') ) ([], g) ps
+    in (map fst ps, snd (last ps))
+    
 
 main :: IO ()
 main = do
@@ -113,14 +114,16 @@ main = do
         PrimeCmd opts -> 
             let kbits' = kbits opts
                 hex' = hex opts
-                p = randomkbitsPrime g kbits'
-                pairFlip = fmap (\(a,b) -> (b, a))
-                p' = pairFlip p
-                ps = if hex' then fmap (fmap (`showHex` "")) p' else (fmap show) <$> p'
-                (g', prime) = fromMaybe (g, "") ps
-            in putStrLn prime
+                pairFlip = \(a,b) -> (b, a)
+                prime g' = let 
+                    p = randomkbitsPrime g' kbits'
+                    p' = pairFlip <$> p
+                    ps = if hex' then fmap (fmap (`showHex` "")) p' else (fmap show) <$> p'
+                    in fromMaybe (g', "") ps
+                primes = fmap snd $ tail $ take (count' + 1) $ iterate (\(g', _) -> prime g') (g, "")
+            in putStr (unlines primes)
         StringCmd opts ->
             let alphabet' = alphabet opts
                 wordLength' = wordLength opts
-                (word, g') = randomString g alphabet' wordLength'
-            in putStrLn word
+                words = fmap fst $ tail $ take (count' + 1) $ iterate (\(_, g') -> randomString g' alphabet' wordLength') ([], g)
+            in putStr (unlines words)

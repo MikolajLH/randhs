@@ -49,6 +49,4 @@ randomkbitsPrime g k =
           is_prime_proba = fromIntegral n_of_primes / fromIntegral (b - a)
           err = 0.00001 :: Double
        in (+ 1) $ floor $ logBase (1 - is_prime_proba) err
-    -- ns = R.randomRs (a, b) g :: [Integer]
     rs = iterate (\(_, g') -> R.randomR (a, b) g') (R.randomR (a, b) g)
-    -- (ns :: [Integer], g') = foldr (\(n, g') (ns, _) -> (n:ns, g') ) ([], g) rs
