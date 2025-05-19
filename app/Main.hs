@@ -114,8 +114,10 @@ main = do
             let kbits' = kbits opts
                 hex' = hex opts
                 p = randomkbitsPrime g kbits'
-                ps = if hex' then fmap (`showHex` "") p else show <$> p
-                prime = fromMaybe "" ps
+                pairFlip = fmap (\(a,b) -> (b, a))
+                p' = pairFlip p
+                ps = if hex' then fmap (fmap (`showHex` "")) p' else (fmap show) <$> p'
+                (g', prime) = fromMaybe (g, "") ps
             in putStrLn prime
         StringCmd opts ->
             let alphabet' = alphabet opts
