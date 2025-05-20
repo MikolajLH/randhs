@@ -1,6 +1,5 @@
 module Main where
 
-import Primes
 import qualified System.Random as R
 import Options.Applicative
 import Numeric (showHex)
@@ -11,6 +10,9 @@ import qualified Data.ByteString as BS
 import Data.ByteString.Char8 (unpack)
 import Data.Word (Word8)
 import Data.Bits (shiftL, (.|.))
+
+import Primes
+import Words
 
 
 
@@ -91,18 +93,6 @@ byteStringToInt :: ByteString -> Int
 byteStringToInt bs = foldl (\acc w -> acc `shiftL` 8 .|. fromIntegral w) 0 (BS.unpack bs)
 
 
-randomListSample :: R.RandomGen g => g -> [a] -> (a, g)
-randomListSample g [] = error "Empty List"
-randomListSample g xs = let (index, g') = R.randomR (0, length xs - 1) g in (xs !! index, g')
-
-
-randomString :: (R.RandomGen g) => g -> [a] -> Int -> ([a], g)
-randomString g [] _ = error "Empty alphabet"
-randomString g xs count = 
-    let ps = take count $ tail $ iterate (\(e, g') -> randomListSample g' xs) (head xs, g) 
-    in (map fst ps, snd (last ps))
-    
-
 main :: IO ()
 main = do
     opts <- execParser (info optionsParser fullDesc)
@@ -125,5 +115,10 @@ main = do
         StringCmd opts ->
             let alphabet' = alphabet opts
                 wordLength' = wordLength opts
-                words = fmap fst $ tail $ take (count' + 1) $ iterate (\(_, g') -> randomString g' alphabet' wordLength') ([], g)
+                wordGenPairMaybies = 
+                    take count' $ 
+                    iterate (>>= \(_, g') -> randomWord g' alphabet' wordLength') $
+                    randomWord g alphabet' wordLength'
+                wordMaybies = map (fmap fst) wordGenPairMaybies
+                words = map (fromMaybe "") wordMaybies
             in putStr (unlines words)
