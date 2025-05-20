@@ -5,7 +5,7 @@ import Data.Maybe (isJust, fromJust)
 
 -- | returns random uniform element of given list wrapped in Just or Nothing if given list is empty
 randomListElement :: R.RandomGen g => g -> [a] -> Maybe (a, g)
-randomListElement g [] = Nothing
+randomListElement _ [] = Nothing
 randomListElement g xs = 
     let 
         firstListIndex = 0
@@ -24,7 +24,7 @@ randomListElement g xs =
 --   The resulting pair is wrapped in Maybe.
 --   Function returns `Nothing` if it was provided empty alphabet, or negative wordLength
 randomWord :: (R.RandomGen g) => g -> [a] -> Int -> Maybe ([a], g)
-randomWord g [] _ = Nothing
+randomWord _ [] _ = Nothing
 randomWord g alphabet wordLength 
     | wordLength <= 0 = Nothing
     | otherwise = 
@@ -32,7 +32,7 @@ randomWord g alphabet wordLength
             elemGenPairMaybies = -- :: [Maybe ([a], g)]
                 take wordLength $
                 iterate 
-                    (>>= \(elem, g') -> randomListElement g' alphabet) $ -- in order to propagate the generator g, monadic nature of maybe is used
+                    (>>= \(_, g') -> randomListElement g' alphabet) $ -- in order to propagate the generator g, monadic nature of maybe is used
                     randomListElement g alphabet -- generate first element of word
         in 
             -- since we already checked that alphabet is not empty this is just for fun,
