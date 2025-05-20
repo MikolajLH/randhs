@@ -45,11 +45,15 @@ globalOptionsParser = GlobalOptions
     <$> option auto
         (  long "seed"
         <> short 's'
+        <> metavar "INT"
+        <> help "seed for RNG, if not provided system entropy source will be used"
         <> value (-1)
         )
     <*> option auto
         (  long "count"
-        <> short 'c' 
+        <> short 'c'
+        <> metavar "INT"
+        <> help "how many samples to generate"
         <> value 1
         )
 
@@ -58,6 +62,7 @@ primeCmdParser :: Parser Command
 primeCmdParser = PrimeCmd <$> (PrimeOptions
     <$> option auto
         (  long "kbits"
+        <> metavar "INT"
         <> short 'k' )
     <*> switch
         (  long "hex"
@@ -68,10 +73,12 @@ stringCmdParser :: Parser Command
 stringCmdParser = StringCmd <$> (StringOptions
     <$> strArgument
         (  metavar "STRING"
-        <> help "Alphabet")
+        <> help "alphabet from which the word string will be sampled")
     <*> option auto
         (  long "length"
-        <> short 'n' ))
+        <> short 'n' 
+        <> metavar "INT"
+        <> help "length of sampled string"))
 
 
 commandParser :: Parser Command
