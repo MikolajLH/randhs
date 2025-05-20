@@ -1,7 +1,6 @@
 module Words where
 
 import qualified System.Random as R
-import Data.Maybe (isJust, fromJust)
 
 -- | returns random uniform element of given list wrapped in Just or Nothing if given list is empty
 randomListElement :: R.RandomGen g => g -> [a] -> Maybe (a, g)
@@ -28,6 +27,9 @@ randomWord _ [] _ = Nothing
 randomWord g alphabet wordLength 
     | wordLength <= 0 = Nothing
     | otherwise = 
+        -- All the shenanigans with list of Maybies (elemGenPairMaybies) are purely for fun,
+        -- since the alphabet is not empty in this part of function which makes randomListElement always return Just (a, g)
+        -- so it would be completly safe to call fromJust on the result of the randomListElement
         let 
             elemGenPairMaybies = -- :: [Maybe ([a], g)]
                 take wordLength $
@@ -35,14 +37,8 @@ randomWord g alphabet wordLength
                     (>>= \(_, g') -> randomListElement g' alphabet) $ -- in order to propagate the generator g, monadic nature of maybe is used
                     randomListElement g alphabet -- generate first element of word
         in 
-            -- since we already checked that alphabet is not empty this is just for fun,
-            -- in practice we could just call `fromJust <$> elemGenPairMaybies` in the block above,
-            -- because it's certain that there won't be any `Nothing` values since alphabet is not empty, so the randomListElement will not fail
-            if all isJust elemGenPairMaybies then
-                let 
-                    elemGenPairs = fromJust <$> elemGenPairMaybies 
-                    word = fst <$> elemGenPairs
-                    g' = snd $ last elemGenPairs
-                in Just (word, g')
-            else
-                Nothing
+            foldl -- foldl with list accumulator will return the word in reverse, but since the word is random it doesn't matter
+                (liftA2 $ \(acc, _) (c, g') -> (c:acc, g'))  -- accumulate word and keep track of last RandomGen, liftA2 allow this lambda to operate inside Maybies
+                (Just ([], g))
+                elemGenPairMaybies
+            
